@@ -1,0 +1,21 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: build with bash
+      run: bash build.sh
+      run: make
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
