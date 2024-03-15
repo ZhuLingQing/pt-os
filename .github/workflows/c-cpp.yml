@@ -17,4 +17,7 @@ jobs:
     - name: build with bash
       run: bash bash_build.sh
     - name: run tests
-      run: pushd build && ./test_pt_os &&popd
+      run: |
+        pushd build
+        ./test_pt_os
+        popd

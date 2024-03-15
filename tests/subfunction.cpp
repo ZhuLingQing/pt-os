@@ -29,19 +29,35 @@ static inline int TestCheck()
     return testFailed ? 1 : 0;
 }
 
-static TASK_DECLARE(prodTask(OsTaskId taskId, void *param))
+void prodSubFunction(long id)
 {
     static int i = 1;
+    TaskWaitUntil(!rb_.full());
+    rb_.push(i);
+    kProdData_[id].push(i);
+    OS_TRACE("%s %d\n", TaskName(OsSelfId), i);
+    i++;
+}
+
+static TASK_DECLARE(prodTask(OsTaskId taskId, void *param))
+{
     TASK_BEGIN(taskId);
     OS_TRACE("%s Begin\n", TaskName(OsSelfId));
     while (1)
     {
-        TASK_WAIT_UNTIL(taskId, !rb_.full());
-        rb_.push(i);
-        kProdData_[(long)param].push(i);
-        i++;
+        prodSubFunction((long)param);
+        TASK_YIELD(taskId);
     }
     TASK_END(taskId);
+}
+
+int consSubFunction(long id)
+{
+    int v;
+    TaskWaitUntil(!rb_.empty());
+    rb_.pop(v);
+    kConsData_[id].push(v);
+    return v;
 }
 
 static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
@@ -52,9 +68,7 @@ static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
     OS_TRACE("%s Begin\n", TaskName(OsSelfId));
     while (1)
     {
-        TASK_WAIT_UNTIL(taskId, !rb_.empty());
-        rb_.pop(v);
-        kConsData_[(long)param].push(v);
+        v = consSubFunction((long)param);
         if (v != i)
         {
             testFailed = true;
@@ -62,17 +76,17 @@ static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
         }
         if (i == testCount / 4 * 1)
         {
-            OS_TRACE("%s suspend %s\n", TaskName(taskId), TaskName(kProdId_[0]));
+            OS_TRACE("%s suspend %s @%d\n", TaskName(taskId), TaskName(kProdId_[0]), i);
             TaskSuspend(kProdId_[0]);
         }
         else if (i == testCount / 4 * 2)
         {
-            OS_TRACE("%s resume %s\n", TaskName(taskId), TaskName(kProdId_[0]));
+            OS_TRACE("%s resume %s @%d\n", TaskName(taskId), TaskName(kProdId_[0]), i);
             TaskResume(kProdId_[0]);
         }
         else if (i == testCount / 4 * 3)
         {
-            OS_TRACE("%s suspend %s\n", TaskName(taskId), TaskName(kProdId_[1]));
+            OS_TRACE("%s suspend %s @%d\n", TaskName(taskId), TaskName(kProdId_[1]), i);
             TaskSuspend(kProdId_[1]);
         }
         i++;
@@ -87,7 +101,7 @@ static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
     TASK_END(taskId);
 }
 
-int TestResume()
+int TestSubfunction()
 {
     OS_TRACE("========  %s  ========\n", __FUNCTION__);
     TestInit();

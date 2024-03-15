@@ -1,8 +1,4 @@
-#include "tz_ringbuf.hpp"
-#include "pt-os.h"
-#include <stdio.h>
-#include <string.h>
-#include "test.h"
+#include "os_test.h"
 
 static constexpr int kThreadNum = 2;
 
@@ -32,7 +28,7 @@ static inline int TestCheck()
         sprintf(name, "CONS%d", i);
         DumpData(name, kConsData_[i]);
     }
-    if (testFailed) printf("Test failed.\n");
+    if (testFailed) OS_TRACE("Test failed.\n");
     return testFailed ? 1 : 0;
 }
 
@@ -40,7 +36,7 @@ static TASK_DECLARE(prodTask(OsTaskId taskId, void *param))
 {
     static int i = 1;
     TASK_BEGIN(taskId);
-    printf("%s Begin\n", TaskName(taskId));
+    OS_TRACE("%s Begin\n", TaskName(taskId));
     while (1)
     {
         TASK_WAIT_UNTIL(taskId, !rb_.full());
@@ -57,7 +53,7 @@ static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
     static int i = 1;
     int v;
     TASK_BEGIN(taskId);
-    printf("%s Begin\n", TaskName(taskId));
+    OS_TRACE("%s Begin\n", TaskName(taskId));
     while (1)
     {
         TASK_WAIT_UNTIL(taskId, !rb_.empty());
@@ -71,7 +67,7 @@ static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
         i++;
         if (i > testCount)
         {
-            printf("%s delete %s\n", TaskName(taskId), TaskName(kConsId_[(long)param ^ 1]));
+            OS_TRACE("%s delete %s\n", TaskName(taskId), TaskName(kConsId_[(long)param ^ 1]));
             TaskDelete(kConsId_[(long)param ^ 1]);
             TASK_EXIT(taskId);
         }
@@ -82,7 +78,7 @@ static TASK_DECLARE(consTask(OsTaskId taskId, void *param))
 
 int Test1p2c()
 {
-    printf("========  %s  ========\n", __FUNCTION__);
+    OS_TRACE("========  %s  ========\n", __FUNCTION__);
     TestInit();
 
     OsInit();
