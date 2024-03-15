@@ -15,6 +15,6 @@ jobs:
     - name: check the environment
       run: g++ --version && git --version
     - name: build with bash
-      run: bash build.sh
+      run: bash bash_build.sh
     - name: run tests
       run: pushd build && ./test_pt_os &&popd
