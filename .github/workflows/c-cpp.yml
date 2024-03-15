@@ -2,9 +2,6 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "main", "dev" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
@@ -12,10 +9,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v1
     - name: check the environment
-      run: g++ --version
-      run: git --version
+      run: g++ --version && git --version && bash --version
+    - name: list the environment
+      run: ls -la
     - name: build with bash
-      run: bash build.sh
+      run: bash bash_build.sh
     - name: run tests
       run: pushd build && ./test_pt_os &&popd
