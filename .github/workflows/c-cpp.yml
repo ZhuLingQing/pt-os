@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: check the environment
       run: g++ --version && git --version && bash --version
+    - name: list the environment
+      run: ls -la
     - name: build with bash
       run: bash bash_build.sh
     - name: run tests
