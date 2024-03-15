@@ -13,8 +13,7 @@ jobs:
 
     steps:
     - name: check the environment
-      run: g++ --version
-      run: git --version
+      run: g++ --version && git --version
     - name: build with bash
       run: bash build.sh
     - name: run tests
