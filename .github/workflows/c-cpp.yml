@@ -1,0 +1,21 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: check the environment
+      run: g++ --version
+      run: git --version
+    - name: build with bash
+      run: bash build.sh
+    - name: run tests
+      run: pushd build && ./test_pt_os &&popd
