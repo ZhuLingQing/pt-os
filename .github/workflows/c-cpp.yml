@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: check the environment
+      run: g++ --version
+      run: git --version
     - name: build with bash
       run: bash build.sh
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: run tests
+      run: pushd build && ./test_pt_os &&popd
