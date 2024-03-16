@@ -3,6 +3,7 @@
 
 #include <pt.h>
 #include "pt-osConfig.h"
+#include "os-timer.h"
 
 #define TASK_BEGIN(id) PT_BEGIN(id)
 #define TASK_YIELD(id) PT_YIELD(id)
