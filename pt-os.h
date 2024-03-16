@@ -30,6 +30,7 @@ extern "C"
 #define TASK_OP_SUCCESS (0)
 #define INVALID_TASK_ID (-1)
 #define INVALID_TASK_STATUS (-2)
+#define NO_RESOURCE (-3)
 
     typedef enum
     {

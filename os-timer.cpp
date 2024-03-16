@@ -1,6 +1,6 @@
-#include "os_timer.h"
+#include "os-timer.h"
 #include "pt-os.h"
-#include "os_timer_port.h"
+#include "os-timer-port.h"
 #include <etl/set.h>
 
 constexpr int kMaxTimerItem = 16;
@@ -18,7 +18,6 @@ typedef struct
 volatile int kOsTimerTrigged_ = 0;
 int kOsTimerHandled_ = 0;
 int kOsTimerIdSeed_ = 0;
-uint64_t kOsTimerTicksPerUs_ = 0;
 
 struct tick_cmp
 {
@@ -52,11 +51,9 @@ TASK_DECLARE(OsTimerTask_(OsTaskId taskId, void *))
         // remove the current timer.
         gOsTimerObj_.erase(tim);
         // if has one or more timer enable it.
-        if (gOsTimerObj_.size())
-        {
-            tim = gOsTimerObj_.begin();
+        tim = gOsTimerObj_.begin();
+        if (tim != gOsTimerObj_.end())
             portTimerStart(tim->end_tick);
-        }
     }
     TASK_END(taskId);
 }
@@ -65,16 +62,15 @@ void OsTimerInit()
 {
     portTimerInit(OsTimerIsrHandler_);
     portTimerStop();
-    kOsTimerTicksPerUs_ = portTimerTicksPerUs();
     RegisterTask("thrTmr", OsTimerTask_, nullptr);
 }
 
 int OsTimerRegister(OsTimerCallback_t callback, void *param, uint64_t period_us, bool repeatable, int *id)
 {
-    if (gOsTimerObj_.full()) return kLtMallocFail;
+    if (gOsTimerObj_.full()) return NO_RESOURCE;
     portTimerStop();
-    gOsTimerObj_.insert({callback, param, period_us * kOsTimerTicksPerUs_,
-                         portTimerComputeEndTick(period_us * kOsTimerTicksPerUs_), ++kOsTimerIdSeed_, repeatable});
+    gOsTimerObj_.insert({callback, param, period_us,
+                         portTimerGetUs() + period_us, ++kOsTimerIdSeed_, repeatable});
     portTimerStart(gOsTimerObj_.begin()->end_tick);
     if (id) *id = kOsTimerIdSeed_;
     return TASK_OP_SUCCESS;
@@ -92,19 +88,20 @@ int OsTimerKill(int id)
             return TASK_OP_SUCCESS;
         }
     }
+    return INVALID_TASK_ID;
 }
 
 static void timerDelayCallback_(int id, void *param)
 {
     bool *triggerred = (bool *)param;
-    // HAL_UartPrint("[TIM]: to %llu\n", portTimerGetTick());
+    // HAL_UartPrint("[TIM]: to %llu\n", portTimerGetUs());
     *triggerred = true;
 }
 
 int OsTimerDelayUs(uint64_t delay_us)
 {
     bool timerTriggered = false;
-    // HAL_UartPrint("[TIM]: from %llu - %lluUs\n", portTimerGetTick(), delay_us);
+    // HAL_UartPrint("[TIM]: from %llu - %lluUs\n", portTimerGetUs(), delay_us);
     int rc = OsTimerRegister(timerDelayCallback_, &timerTriggered, delay_us, false, 0);
     if (rc != TASK_OP_SUCCESS) return rc;
     while (timerTriggered == false) TaskYield();

@@ -25,7 +25,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 target_include_directories(${LIB_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(${LIB_NAME} protothreads)
+target_link_libraries(${LIB_NAME} protothreads etl)
 
 set( OS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE )
 

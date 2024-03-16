@@ -11,4 +11,6 @@
 #include <cassert>
 #define OS_ASSERT assert
 
+#define OS_PRINT printf
+
 #endif

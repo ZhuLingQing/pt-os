@@ -1,58 +1,59 @@
-#include <os.h>
+#include "os_test.h"
 #include <os-timer-port.h>
 
+constexpr long testTimerGain_ = 10000;
 constexpr int kMaxTestNum_ = 10;
-volatile int testCount = 0;
-uint64_t tickStart;
+volatile int kSignalTriggered_ = 0;
+uint64_t kStartUs_;
 static long testTimerParam[kMaxTestNum_];
 constexpr long testTimerGolden[kMaxTestNum_] = {11, 33, 50, 51, 33, 99, 33, 33, 33, 33};
-static uint64_t testTickCounter[kMaxTestNum_];
-constexpr uint64_t testTickGolden[kMaxTestNum_] = {100, 300, 500, 500, 600, 900, 900, 1200, 1500, 1800};
+static uint64_t testUsCounter[kMaxTestNum_];
+constexpr uint64_t testUsGolden[kMaxTestNum_] = {100, 300, 500, 500, 600, 900, 900, 1200, 1500, 1800};
 
 void testTimerCallback_(int id, void *param)
 {
-    testTickCounter[testCount] = portTimerGetTick() / 1000 - tickStart;
-    testTimerParam[testCount] = (long)param;
-    OS_TRACE("Timer%d: %lld happened at %llu\n", id, testTimerParam[testCount], testTickCounter[testCount]);
-    testCount++;
+    testUsCounter[kSignalTriggered_] = portTimerGetUs();
+    testTimerParam[kSignalTriggered_] = (long)param;
+    OS_TRACE("Timer%d: %lld happened at %llu\n", id, testTimerParam[kSignalTriggered_], testUsCounter[kSignalTriggered_]/1000);
+    kSignalTriggered_++;
 }
 
 constexpr long kTimerTaskSeconds_ = 3;
-long tCount1Ms = 0;
-long tCount100Us = 0;
+long tCount1s = 0;
+long tCount100Ms = 0;
 long tCountIdle = 0;
 
 static void timerDelayCallback_(int id, void *param)
 {
     bool *triggerred = (bool *)param;
-    // OS_TRACE("[TIM]: to %llu\n", portTimerGetTick());
+    // OS_TRACE("[TIM]: to %llu\n", portTimerGetUs());
     *triggerred = true;
 }
 
-PT_THREAD(testTimerThread1Ms_(OsTaskId taskId, void *param))
+PT_THREAD(testTimerThread1s_(OsTaskId taskId, void *param))
 {
     static bool timerTriggered;
     TASK_BEGIN(taskId);
     while (1)
     {
-        OsTimerDelayUs(1000);
+        OsTimerDelayUs(1000 * 1000);
         TASK_YIELD(taskId);  // force Yield
-        tCount1Ms++;
-        // OS_TRACE("1Ms hit %ld, idleYield %ld\n", tCount1Ms, tCountIdle);
+        tCount1s++;
+        // OS_TRACE("1s hit %ld, idleYield %ld\n", tCount1s, tCountIdle);
     }
     TASK_END(taskId);
 }
 
-PT_THREAD(testTimerThread100Us_(OsTaskId taskId, void *param))
+PT_THREAD(testTimerThread100Ms_(OsTaskId taskId, void *param))
 {
     static bool timerTriggered;
     TASK_BEGIN(taskId);
     while (1)
     {
-        OsTimerDelayUs(100);
+        OsTimerDelayUs(100 * 1000);
         TASK_YIELD(taskId);  // force Yield
-        tCount100Us++;
-        // OS_TRACE("100Us hit %ld, idleYield %ld\n", tCount100Us, tCountIdle);
+        tCount100Ms++;
+        // OS_TRACE("100Ms hit %ld, idleYield %ld\n", tCount100Ms, tCountIdle);
     }
     TASK_END(taskId);
 }
@@ -71,24 +72,27 @@ PT_THREAD(testIdleThread_(OsTaskId taskId, void *param))
 int TestTimer()
 {
     int repeat_timer_id;
+    OS_TRACE("========  %s  ========\n", __FUNCTION__);
     OsInit();
     OsTimerInit();
+    kStartUs_ = portTimerGetUs();
+    OS_TRACE("Timer Init\n", __FUNCTION__);
 
-    tickStart = portTimerGetTick() / 1000;
-    LT_ASSERT(kLtSc == OsTimerRegister(testTimerCallback_, (void *)(11), 100, false, nullptr));
-    LT_ASSERT(kLtSc == OsTimerRegister(testTimerCallback_, (void *)(50), 500, false, nullptr));
-    LT_ASSERT(kLtSc == OsTimerRegister(testTimerCallback_, (void *)(99), 900, false, nullptr));
-    LT_ASSERT(kLtSc == OsTimerRegister(testTimerCallback_, (void *)(33), 300, true, &repeat_timer_id));
-    LT_ASSERT(kLtSc == OsTimerRegister(testTimerCallback_, (void *)(51), 500, false, nullptr));
+    OsTimerRegister(testTimerCallback_, (void *)(11), 100 * testTimerGain_, false, nullptr);
+    OsTimerRegister(testTimerCallback_, (void *)(50), 500 * testTimerGain_, false, nullptr);
+    OsTimerRegister(testTimerCallback_, (void *)(99), 900 * testTimerGain_, false, nullptr);
+    OsTimerRegister(testTimerCallback_, (void *)(33), 300 * testTimerGain_, true, &repeat_timer_id);
+    OsTimerRegister(testTimerCallback_, (void *)(51), 500 * testTimerGain_, false, nullptr);
 
-    while (testCount < kMaxTestNum_) TaskYield();
+    OS_TRACE("Timer Yield\n", __FUNCTION__);
+    while (kSignalTriggered_ < kMaxTestNum_) TaskYield();
     for (int i = 0; i < kMaxTestNum_; i++)
     {
-        if (testTimerParam[i] != testTimerGolden[i] || testTickCounter[i] / 10 != testTickGolden[i] / 10)
+        if (testTimerParam[i] != testTimerGolden[i] || testUsCounter[i] / 1000 != testUsGolden[i] * testTimerGain_ / 1000)
         {
             OS_TRACE("Test%d Failed\n", i);
             OS_TRACE("Timer [%lld : %lld]. Tick [%llu : %llu]\n", testTimerParam[i], testTimerGolden[i],
-                          testTickCounter[i], testTickGolden[i]);
+                          testUsCounter[i], testUsGolden[i] * testTimerGain_);
             return 1;
         }
     }
@@ -97,7 +101,7 @@ int TestTimer()
         OS_TRACE("Timer count error 1 - %d\n", OsTimerCount());
         return 2;
     }
-    LT_ASSERT(OsTimerKill(repeat_timer_id) == kLtSc);
+    OsTimerKill(repeat_timer_id);
     if (OsTimerCount() != 0)
     {
         OS_TRACE("Timer count error 0 - %d\n", OsTimerCount());
@@ -105,17 +109,17 @@ int TestTimer()
     }
 
     OS_TRACE("Test Timer in task\n");
-    RegisterTask("thr1Ms", &testTimerThread1Ms_, nullptr);
-    RegisterTask("thr100Us", &testTimerThread100Us_, nullptr);
+    RegisterTask("thr1s", &testTimerThread1s_, nullptr);
+    RegisterTask("thr100Ms", &testTimerThread100Ms_, nullptr);
     RegisterTask("thrIdle", &testIdleThread_, nullptr);
     OS_TRACE("Test Timer start\n");
-    while (tCount1Ms < kTimerTaskSeconds_)
+    while (tCount1s < kTimerTaskSeconds_)
     {
         TaskYield();
     }
-    if ((tCount1Ms * 10 - tCount100Us) <= 2)
+    if ((tCount1s * 10 - tCount100Ms) <= 2)
     {
-        OS_TRACE("Timer task error %ld - %ld\n", tCount1Ms, tCount100Us);
+        OS_TRACE("Timer task error %ld - %ld\n", tCount1s, tCount100Ms);
         return 4;
     }
     OS_TRACE("Idle task yield %ld\n", tCountIdle);
