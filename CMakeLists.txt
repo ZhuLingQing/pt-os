@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
 
 add_subdirectory("protothreads")
+add_subdirectory("etl")
 
 # cd ./build && make test
 enable_testing()
+
+if (DEBUG)
+    SET(CMAKE_BUILD_TYPE "Debug")
+    message(STATUS "Build with debug mode")
+else()
+    SET(CMAKE_BUILD_TYPE "Release")
+    message(STATUS "Build with release mode as default")
+endif()
 
 set( LIB_NAME pt_os_lib )
 

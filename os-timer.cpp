@@ -1,6 +1,7 @@
 #include "os_timer.h"
 #include "pt-os.h"
 #include "os_timer_port.h"
+#include <etl/set.h>
 
 constexpr int kMaxTimerItem = 16;
 
