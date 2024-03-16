@@ -10,6 +10,8 @@ target_link_libraries(${TEST}
     protothreads
 )
 
-target_include_directories(${TEST} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories(${PROJECT_SOURCE_DIR} ${OS_LIB_DIR})
+
+target_include_directories(${TEST} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} ${OS_LIB_DIR})
 
 add_test( NAME ${TEST} COMMAND ./${TEST})
