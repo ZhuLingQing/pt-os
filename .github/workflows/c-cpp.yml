@@ -12,12 +12,21 @@ jobs:
     - uses: actions/checkout@v1
     - name: check the environment
       run: g++ --version && git --version && bash --version
-    - name: list the environment
-      run: ls -la
-    - name: build with bash
-      run: bash bash_build.sh
-    - name: run tests
+      run: cmake --version
+    - name: make the project
+      run: |
+        mkdir build
+        pushd build
+        cmake ..
+        make
+        popd
+    - name: test
       run: |
         pushd build
-        ./test_pt_os
+        make test
         popd
+    - name: test with bash
+      run: |
+        ./build/tests/test_pt_os
+        echo "DONE
+        "
