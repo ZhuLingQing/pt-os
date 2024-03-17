@@ -6,9 +6,9 @@ constexpr int kMaxTestNum_ = 10;
 volatile int kSignalTriggered_ = 0;
 uint64_t kStartUs_;
 static long testTimerParam[kMaxTestNum_];
-constexpr long testTimerGolden[kMaxTestNum_] = {11, 33, 50, 51, 33, 33, 99, 33, 33, 33};
+constexpr long testTimerGolden[kMaxTestNum_] = {11, 33, 50, 51, 33, 99, 33, 33, 33, 33};
 static uint64_t testUsCounter[kMaxTestNum_];
-constexpr uint64_t testUsGolden[kMaxTestNum_] = {100, 300, 500, 500, 600, 900, 1000, 1200, 1500, 1800};
+constexpr uint64_t testUsGolden[kMaxTestNum_] = {100, 300, 500, 500, 600, 900, 900, 1200, 1500, 1800};
 
 void testTimerCallback_(int id, void *param)
 {
@@ -84,7 +84,7 @@ int TestTimer()
 
     OsTimerRegister(testTimerCallback_, (void *)(11), 100 * testTimerGain_, false, nullptr);
     OsTimerRegister(testTimerCallback_, (void *)(50), 500 * testTimerGain_, false, nullptr);
-    OsTimerRegister(testTimerCallback_, (void *)(99), 1000 * testTimerGain_, false, nullptr);
+    OsTimerRegister(testTimerCallback_, (void *)(99), 900 * testTimerGain_, false, nullptr);
     OsTimerRegister(testTimerCallback_, (void *)(33), 300 * testTimerGain_, true, &repeat_timer_id);
     OsTimerRegister(testTimerCallback_, (void *)(51), 500 * testTimerGain_, false, nullptr);
 
