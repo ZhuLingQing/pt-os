@@ -53,15 +53,12 @@ void portTimerStart(long end_us)
 {
     struct itimerval value, ovalue;
     long offset = end_us - portTimerGetUs();
-    if (offset > 5)
-    {
-        value.it_value.tv_sec = offset/1000000;
-        value.it_value.tv_usec = offset%1000000;
-        value.it_interval.tv_sec = value.it_value.tv_sec;
-        value.it_interval.tv_usec = value.it_value.tv_usec;
-        setitimer(ITIMER_REAL, &value, &ovalue);
-    }
-    else TimerCallback_();
+    if (offset < 10) offset = 100;
+    value.it_value.tv_sec = offset/1000000;
+    value.it_value.tv_usec = offset%1000000;
+    value.it_interval.tv_sec = value.it_value.tv_sec;
+    value.it_interval.tv_usec = value.it_value.tv_usec;
+    setitimer(ITIMER_REAL, &value, &ovalue);
 }
 
 #endif

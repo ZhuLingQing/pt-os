@@ -60,6 +60,7 @@ TASK_DECLARE(OsTimerTask_(OsTaskId taskId, void *))
 
 void OsTimerInit()
 {
+    gOsTimerObj_.clear();
     portTimerInit(OsTimerIsrHandler_);
     portTimerStop();
     RegisterTask("thrTmr", OsTimerTask_, nullptr);
