@@ -21,9 +21,15 @@ pushd ${build_dir}
 
 #clone the dependency repo
 git clone https://github.com/ZhuLingQing/protothreads.git
+git clone https://github.com/ETLCPP/etl.git
+pushd etl
+git checkout 20.38.10
+popd
 #build the os static library
-g++ -g -o ${lib_name}.o -c ../pt-os.cpp -I./protothreads
-ar -rv lib${lib_name}.a ${lib_name}.o
+g++ -g -o ${pt-os}.o -c ../pt-os.cpp -I./protothreads -I./etl
+g++ -g -o ${os-timer}.o -c ../os-timer.cpp -I./protothreads -I./etl
+g++ -g -o ${os-timer-port}.o -c ../os-timer-port.cpp -I./protothreads -I./etl
+ar -rv lib${lib_name}.a ${pt-os}.o ${os-timer}.o  ${os-timer-port}.o 
 #build the test
 g++ -g -o test_pt_os ../tests/*.cpp -I./protothreads -I.. -I../tests -L. -l${lib_name}
 #run the test

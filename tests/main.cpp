@@ -18,6 +18,7 @@ int Test2p1c();
 int Test1p2c();
 int TestResume();
 int TestSubfunction();
+int TestTimer();
 
 int main()
 {
@@ -27,5 +28,7 @@ int main()
     rc += Test2p1c();
     rc += TestResume();
     rc += TestSubfunction();
+    rc += TestTimer();
+    
     return rc;
 }

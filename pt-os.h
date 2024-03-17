@@ -3,6 +3,7 @@
 
 #include <pt.h>
 #include "pt-osConfig.h"
+#include "os-timer.h"
 
 #define TASK_BEGIN(id) PT_BEGIN(id)
 #define TASK_YIELD(id) PT_YIELD(id)
@@ -29,6 +30,7 @@ extern "C"
 #define TASK_OP_SUCCESS (0)
 #define INVALID_TASK_ID (-1)
 #define INVALID_TASK_STATUS (-2)
+#define NO_RESOURCE (-3)
 
     typedef enum
     {
