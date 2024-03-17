@@ -1,3 +1,5 @@
+#for no cmake installed.
+
 RED=$(tput setaf 1)
 GREEN=$(tput setaf 2)
 NCOLOR=$(tput sgr0)
