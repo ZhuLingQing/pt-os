@@ -8,7 +8,7 @@
 // Number of maximum threads support
 #define osMaxThreads (64)
 
-// Number of maximum timer support
+// Number of timer.
 #define osMaxTimers (64)
 
 #include <cassert>

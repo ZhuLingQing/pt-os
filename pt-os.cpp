@@ -212,7 +212,12 @@ int OsInit(void)
     return TASK_OP_SUCCESS;
 }
 
+static TaskFunction idleTask = nullptr;
+
 void OsStart(void)
 {
+    if (idleTask) RegisterTask("Idle", idleTask, nullptr);
     while (sOsControlBlock_.NumOfLivingTasks() > 0) sOsControlBlock_.Schedule();
 }
+
+void OsAddIdleTask(TaskFunction task) { idleTask = task; }

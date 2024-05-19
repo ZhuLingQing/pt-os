@@ -1,7 +1,7 @@
 #include "os-timer.h"
+#include <etl/multiset.h>
 #include "pt-os.h"
 #include "os-timer-port.h"
-#include <etl/multiset.h>
 
 static void OsTimerIsrHandler_();
 
@@ -15,7 +15,8 @@ class PtTimer
         uint64_t period_us;
         uint64_t end_us;
         int id;
-        bool repeatable;
+
+        int repeatable;
     } PtTimer_t;
     struct tick_cmp
     {
@@ -34,8 +35,9 @@ class PtTimer
         return true;
     }
 
-    void Init()
+    void Init(uint64_t ticksPerUs)
     {
+        ticksPerUs_ = ticksPerUs;
         timerObj_.clear();
     }
 
@@ -49,22 +51,22 @@ class PtTimer
         if (tim->repeatable)
         {
             timerObj_.insert(
-                {tim->callback, tim->param, tim->period_us, tim->end_us + tim->period_us, tim->id, true});
+                {tim->callback, tim->param, tim->period_us, tim->end_us + tim->period_us, tim->id, 1});
         }
         // remove the current timer.
         timerObj_.erase(tim);
+
         // if has one or more timer enable it.
         tim = timerObj_.begin();
-        if (tim != timerObj_.end())
-            portTimerStart(tim->end_us);
+        if (tim != timerObj_.end()) portTimerStart(tim->end_us);
     }
-    
+
     int Register(OsTimerCallback_t callback, void *param, uint64_t period_us, bool repeatable, int *id)
     {
-        if (timerObj_.full()) return NO_RESOURCE;
+        if (timerObj_.full()) return OS_NO_RESOURCE;
         portTimerStop();
-        timerObj_.insert({callback, param, period_us,
-                            portTimerGetUs() + period_us, ++timerIdSeed_, repeatable});
+        timerObj_.insert(
+            {callback, param, period_us, portTimerGetUs() + period_us, ++timerIdSeed_, repeatable ? 1 : 0});
         portTimerStart(timerObj_.begin()->end_us);
         if (id) *id = timerIdSeed_;
         return TASK_OP_SUCCESS;
@@ -78,7 +80,16 @@ class PtTimer
         {
             if (it->id == id)
             {
-                timerObj_.erase(it);
+                if (it == timerObj_.begin())
+                {
+                    // if 1st timer is killed, reload the next one.
+                    portTimerStop();
+                    timerObj_.erase(it);
+                    it = timerObj_.begin();
+                    if (it != timerObj_.end()) portTimerStart(it->end_us);
+                }
+                else
+                    timerObj_.erase(it);
                 return TASK_OP_SUCCESS;
             }
         }
@@ -93,11 +104,6 @@ class PtTimer
         if (rc != TASK_OP_SUCCESS) return rc;
         while (timerTriggered == false) TaskYield();
         return TASK_OP_SUCCESS;
-    }
-    
-    inline void try_insert(OsTimerCallback_t callback, void *param, uint64_t period_us, uint64_t end_us, bool repeatable)
-    {
-        
     }
     void EventCallback()
     {
@@ -115,15 +121,13 @@ class PtTimer
     volatile int timerTrigged_;
     int timerHandled_;
     int timerIdSeed_;
+    uint64_t ticksPerUs_;
     etl::multiset<PtTimer_t, osMaxTimers, tick_cmp> timerObj_;
 };
 
 static PtTimer kTimer_;
 
-static void OsTimerIsrHandler_()
-{
-    kTimer_.EventCallback();
-}
+static void OsTimerIsrHandler_() { kTimer_.EventCallback(); }
 
 static TASK_DECLARE(OsTimerTask_(OsTaskId taskId, void *))
 {
@@ -139,9 +143,9 @@ static TASK_DECLARE(OsTimerTask_(OsTaskId taskId, void *))
 
 void OsTimerInit()
 {
-    kTimer_.Init();
     portTimerInit(OsTimerIsrHandler_);
     portTimerStop();
+    kTimer_.Init(portTimerTicksPerUs());
     RegisterTask("thrTmr", OsTimerTask_, nullptr);
 }
 
@@ -152,12 +156,6 @@ int OsTimerRegister(OsTimerCallback_t callback, void *param, uint64_t period_us,
 
 int OsTimerCount() { return kTimer_.Count(); }
 
-int OsTimerKill(int id)
-{
-    return kTimer_.Kill(id);
-}
+int OsTimerKill(int id) { return kTimer_.Kill(id); }
 
-int OsTimerDelayUs(uint64_t delay_us)
-{
-    return kTimer_.DelayUs(delay_us);
-}
+int OsTimerDelayUs(uint64_t delay_us) { return kTimer_.DelayUs(delay_us); }

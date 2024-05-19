@@ -41,6 +41,11 @@ extern "C"
     \*****************************************************************************/
     int OsTimerKill(int id);
 
+    /*****************************************************************************\
+     * @description : delay micro seconds
+     * @param        [I]: delay_us
+     * @return       error or success
+    \*****************************************************************************/
     int OsTimerDelayUs(uint64_t delay_us);
 
 #ifdef __cplusplus
