@@ -46,7 +46,6 @@ class PtTimer
         // find the first timer. Which happened most recently.
         auto tim = timerObj_.begin();
         OS_ASSERT(tim != timerObj_.end());  // Shouldn't be empty.
-
         if (tim->callback) tim->callback(tim->id, tim->param);
         // update the repeatable timer.
         if (tim->repeatable)
@@ -106,7 +105,6 @@ class PtTimer
         while (timerTriggered == false) TaskYield();
         return TASK_OP_SUCCESS;
     }
-
     void EventCallback()
     {
         timerTrigged_ += 1;
