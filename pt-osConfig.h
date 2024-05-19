@@ -8,6 +8,9 @@
 // Number of maximum threads support
 #define osMaxThreads (64)
 
+// Number of timer.
+#define osMaxTimers (64)
+
 #include <cassert>
 #define OS_ASSERT assert
 

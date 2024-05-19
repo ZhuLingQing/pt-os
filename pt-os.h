@@ -30,7 +30,7 @@ extern "C"
 #define TASK_OP_SUCCESS (0)
 #define INVALID_TASK_ID (-1)
 #define INVALID_TASK_STATUS (-2)
-#define NO_RESOURCE (-3)
+#define OS_NO_RESOURCE (-3)
 
     typedef enum
     {
@@ -64,6 +64,8 @@ extern "C"
 
     // Start scheduling all the tasks, only return while all tasks are OsTaskExit or OsTaskNotExist.
     void OsStart(void);
+
+    void OsAddIdleTask(TaskFunction task);
 
 #if __cplusplus
 }

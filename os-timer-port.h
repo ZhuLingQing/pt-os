@@ -7,6 +7,8 @@ void portTimerInit( void (*callback)());
 
 void portTimerStop();
 
+#define portTimerTicksPerUs() 1
+
 long portTimerGetUs();
 
 void portTimerStart(long end_us);
